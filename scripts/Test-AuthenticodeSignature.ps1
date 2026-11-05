@@ -90,14 +90,33 @@ function Resolve-TargetFiles {
     param([string]$Patterns)
 
     $resolved = [System.Collections.Generic.List[string]]::new()
-    $rawPatterns = $Patterns -split "[\r\n;,]+" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' -and -not ($_.StartsWith('#')) }
+    $lines = $Patterns -split "[\r\n]+" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' -and -not ($_.StartsWith('#')) }
 
-    if (@($rawPatterns).Count -eq 0) {
+    if (@($lines).Count -eq 0) {
         return @()
     }
 
+    $rawPatterns = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in $lines) {
+        $cleanLine = $line.Trim().Trim("'").Trim('"').Trim('`')
+        if (Test-Path -LiteralPath $cleanLine -PathType Leaf) {
+            $rawPatterns.Add($cleanLine)
+            continue
+        }
+        if ($cleanLine -match '[,;]') {
+            $parts = $cleanLine -split '[,;]+' | ForEach-Object { $_.Trim().Trim("'").Trim('"').Trim('`') } | Where-Object { $_ -ne '' }
+            foreach ($p in $parts) {
+                $rawPatterns.Add($p)
+            }
+        }
+        else {
+            $rawPatterns.Add($cleanLine)
+        }
+    }
+
     foreach ($pat in $rawPatterns) {
-        $cleanPat = $pat.Trim("'`"")
+        $cleanPat = $pat.Trim().Trim("'").Trim('"').Trim('`')
+        
         if (Test-Path -LiteralPath $cleanPat -PathType Leaf) {
             $fullPath = [System.IO.Path]::GetFullPath($cleanPat)
             if (-not $resolved.Contains($fullPath)) {
@@ -123,6 +142,13 @@ function Resolve-TargetFiles {
         }
 
         $cwdPat = Join-Path -Path (Get-Location).Path -ChildPath $cleanPat
+        if (Test-Path -LiteralPath $cwdPat -PathType Leaf) {
+            $fullPath = [System.IO.Path]::GetFullPath($cwdPat)
+            if (-not $resolved.Contains($fullPath)) {
+                $resolved.Add($fullPath)
+            }
+            continue
+        }
         try {
             $matches = Get-ChildItem -Path $cwdPat -File -ErrorAction SilentlyContinue
             if ($matches) {
@@ -225,6 +251,7 @@ function Main {
         $algorithm = if ($sig.SignerCertificate) { $sig.SignerCertificate.SignatureAlgorithm.FriendlyName } else { 'None' }
 
         # Check signature status
+        # Strict signature status checking
         switch ($sig.Status) {
             'Valid' {
                 $passed = $true
@@ -232,36 +259,27 @@ function Main {
             }
             'NotSigned' {
                 Write-Log -Level 'ERROR' -Message "Artifact is NOT SIGNED: $fileName"
+                $passed = $false
                 $errorCount++
             }
             'HashMismatch' {
                 Write-Log -Level 'ERROR' -Message "INTEGRITY VIOLATION: Hash mismatch detected on $fileName. File may have been tampered with post-signing!"
+                $passed = $false
                 $errorCount++
             }
             'NotTrusted' {
-                # In custom CI or test environments, root cert may not be in local machine root store.
-                Write-Log -Level 'WARN' -Message "Signature intact but root CA is not trusted on this host for artifact $fileName - $($sig.StatusMessage)"
-                $warningCount++
-                # If cert structure and signature exist, count as passed with warning unless strict
-                if ($sig.SignerCertificate) {
-                    $passed = $true
-                }
-                else {
-                    $errorCount++
-                }
+                Write-Log -Level 'ERROR' -Message "UNTRUSTED SIGNATURE: Certificate root or chain is untrusted for artifact $fileName - $($sig.StatusMessage)"
+                $passed = $false
+                $errorCount++
             }
             'UnknownError' {
-                Write-Log -Level 'WARN' -Message "WinVerifyTrust reported status: $($sig.Status) - $($sig.StatusMessage) for $fileName"
-                $warningCount++
-                if ($sig.SignerCertificate) {
-                    $passed = $true
-                }
-                else {
-                    $errorCount++
-                }
+                Write-Log -Level 'ERROR' -Message "WinVerifyTrust reported unverified status for $fileName - $($sig.StatusMessage)"
+                $passed = $false
+                $errorCount++
             }
             Default {
                 Write-Log -Level 'ERROR' -Message "Authenticode verification failed for $fileName with status: $($sig.Status) - $($sig.StatusMessage)"
+                $passed = $false
                 $errorCount++
             }
         }
@@ -278,15 +296,62 @@ function Main {
             }
         }
 
-        # Check Timestamp requirement
+        # Cryptographic Certificate Chain and Revocation Check
+        if ($passed -and $sig.SignerCertificate) {
+            try {
+                $chain = [System.Security.Cryptography.X509Certificates.X509Chain]::Create()
+                $chain.ChainPolicy.RevocationMode = [System.Security.Cryptography.X509Certificates.X509RevocationMode]::Online
+                $chain.ChainPolicy.RevocationFlag = [System.Security.Cryptography.X509Certificates.X509RevocationFlag]::EntireChain
+                $chain.ChainPolicy.UrlRetrievalTimeout = [System.TimeSpan]::FromSeconds(10)
+                $chainBuilt = $chain.Build($sig.SignerCertificate)
+
+                if (-not $chainBuilt) {
+                    $chainErrors = @($chain.ChainStatus | ForEach-Object { "$($_.Status): $($_.StatusInformation.Trim())" })
+                    $isRevoked = $chain.ChainStatus | Where-Object { $_.Status -match 'Revoked' }
+                    if ($isRevoked) {
+                        Write-Log -Level 'ERROR' -Message "REVOCATION FAILURE: Signer certificate is revoked for $fileName - $($chainErrors -join '; ')"
+                        $passed = $false
+                        $errorCount++
+                    }
+                    else {
+                        Write-Log -Level 'WARN' -Message "Certificate chain note for $fileName - $($chainErrors -join '; ')"
+                        if ($FailOnWarning) {
+                            $passed = $false
+                            $errorCount++
+                        }
+                        else {
+                            $warningCount++
+                        }
+                    }
+                }
+                else {
+                    Write-Log -Level 'SUCCESS' -Message "X.509 certificate chain and revocation verified online for $fileName"
+                }
+            }
+            catch {
+                Write-Log -Level 'WARN' -Message "Could not execute X509Chain check: $($_.Exception.Message)"
+                if ($FailOnWarning) { $passed = $false; $errorCount++ } else { $warningCount++ }
+            }
+        }
+
+        # Check Timestamp requirement & validity
         if ($passed -and $RequireTimestamp) {
             if (-not $hasTimestamp) {
-                Write-Log -Level 'WARN' -Message "Missing RFC 3161 timestamp counter-signature on $fileName. Signature will expire when the certificate expires."
-                $warningCount++
+                Write-Log -Level 'ERROR' -Message "Missing required RFC 3161 timestamp counter-signature on $fileName."
+                $passed = $false
+                $errorCount++
             }
             else {
                 $tsSubject = $sig.TimeStamperCertificate.Subject
-                Write-Log -Level 'SUCCESS' -Message "RFC 3161 timestamp counter-signature verified on $fileName (TSA: $tsSubject)"
+                $now = [System.DateTime]::UtcNow
+                if ($now -lt $sig.TimeStamperCertificate.NotBefore -or $now -gt $sig.TimeStamperCertificate.NotAfter) {
+                    Write-Log -Level 'ERROR' -Message "Timestamp certificate is expired or invalid on $fileName."
+                    $passed = $false
+                    $errorCount++
+                }
+                else {
+                    Write-Log -Level 'SUCCESS' -Message "RFC 3161 timestamp counter-signature verified on $fileName (TSA: $tsSubject)"
+                }
             }
         }
 

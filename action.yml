@@ -87,7 +87,7 @@ runs:
       run: |
         $failOnWarn = if ($env:INPUT_FAIL_ON_WARNING -eq 'true') { $true } else { $false }
         $dryRun = if ($env:INPUT_DRY_RUN -eq 'true') { $true } else { $false }
-        & "${{ github.action_path }}/scripts/Sign-Artifacts.ps1" `
+        pwsh -NoProfile -NonInteractive -File "${{ github.action_path }}/scripts/Sign-Artifacts.ps1" `
           -Endpoint "$env:INPUT_ENDPOINT" `
           -CodeSigningAccountName "$env:INPUT_ACCOUNT_NAME" `
           -CertificateProfileName "$env:INPUT_PROFILE_NAME" `
@@ -97,6 +97,10 @@ runs:
           -FileDigest "$env:INPUT_FILE_DIGEST" `
           -FailOnWarning:$failOnWarn `
           -DryRun:$dryRun
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "::error::Sign-Artifacts.ps1 failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
 
     - name: Verify Authenticode Signatures
       id: verify-artifacts
@@ -110,8 +114,12 @@ runs:
       run: |
         $failOnWarn = if ($env:INPUT_FAIL_ON_WARNING -eq 'true') { $true } else { $false }
         $dryRun = if ($env:INPUT_DRY_RUN -eq 'true') { $true } else { $false }
-        & "${{ github.action_path }}/scripts/Test-AuthenticodeSignature.ps1" `
+        pwsh -NoProfile -NonInteractive -File "${{ github.action_path }}/scripts/Test-AuthenticodeSignature.ps1" `
           -Files "$env:INPUT_FILES" `
           -ExpectedDigest "$env:INPUT_TIMESTAMP_DIGEST" `
           -FailOnWarning:$failOnWarn `
           -DryRun:$dryRun
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "::error::Test-AuthenticodeSignature.ps1 failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }

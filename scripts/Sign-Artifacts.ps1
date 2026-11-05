@@ -126,17 +126,33 @@ function Resolve-TargetFiles {
     param([string]$Patterns)
 
     $resolved = [System.Collections.Generic.List[string]]::new()
-    $rawPatterns = $Patterns -split "[\r\n;,]+" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' -and -not ($_.StartsWith('#')) }
+    $lines = $Patterns -split "[\r\n]+" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' -and -not ($_.StartsWith('#')) }
 
-    if (@($rawPatterns).Count -eq 0) {
+    if (@($lines).Count -eq 0) {
         return @()
     }
 
+    $rawPatterns = [System.Collections.Generic.List[string]]::new()
+    foreach ($line in $lines) {
+        $cleanLine = $line.Trim().Trim("'").Trim('"').Trim('`')
+        if (Test-Path -LiteralPath $cleanLine -PathType Leaf) {
+            $rawPatterns.Add($cleanLine)
+            continue
+        }
+        if ($cleanLine -match '[,;]') {
+            $parts = $cleanLine -split '[,;]+' | ForEach-Object { $_.Trim().Trim("'").Trim('"').Trim('`') } | Where-Object { $_ -ne '' }
+            foreach ($p in $parts) {
+                $rawPatterns.Add($p)
+            }
+        }
+        else {
+            $rawPatterns.Add($cleanLine)
+        }
+    }
+
     foreach ($pat in $rawPatterns) {
-        # Clean quotes
-        $cleanPat = $pat.Trim("'`"")
+        $cleanPat = $pat.Trim().Trim("'").Trim('"').Trim('`')
         
-        # Check if direct file exists
         if (Test-Path -LiteralPath $cleanPat -PathType Leaf) {
             $fullPath = [System.IO.Path]::GetFullPath($cleanPat)
             if (-not $resolved.Contains($fullPath)) {
@@ -145,7 +161,6 @@ function Resolve-TargetFiles {
             continue
         }
 
-        # Check if wildcard pattern
         try {
             $matches = Get-ChildItem -Path $cleanPat -File -ErrorAction SilentlyContinue
             if ($matches) {
@@ -162,8 +177,14 @@ function Resolve-TargetFiles {
             Write-Log -Level 'DEBUG' -Message "Wildcard expansion failed for pattern: $cleanPat"
         }
 
-        # Check relative to current working directory
         $cwdPat = Join-Path -Path (Get-Location).Path -ChildPath $cleanPat
+        if (Test-Path -LiteralPath $cwdPat -PathType Leaf) {
+            $fullPath = [System.IO.Path]::GetFullPath($cwdPat)
+            if (-not $resolved.Contains($fullPath)) {
+                $resolved.Add($fullPath)
+            }
+            continue
+        }
         try {
             $matches = Get-ChildItem -Path $cwdPat -File -ErrorAction SilentlyContinue
             if ($matches) {
@@ -271,9 +292,47 @@ function Main {
     Write-Log -Level 'INFO' -Message " Strict CI Gating  : FailOnWarning = $FailOnWarning"
     Write-Log -Level 'INFO' -Message "================================================================================"
 
+    # 0. Strict Input Parameter Security Validation
+    if (-not ($Endpoint -match '^https://[a-zA-Z0-9.-]+\.codesigning\.azure\.net/?$')) {
+        Write-Log -Level 'ERROR' -Message "Security Validation: Endpoint '$Endpoint' is invalid. Must be an HTTPS endpoint on codesigning.azure.net."
+        Set-GitHubActionOutput -Name 'signed-files-count' -Value '0'
+        Set-GitHubActionOutput -Name 'signing-status' -Value 'error'
+        exit 2
+    }
+
+    if (-not ($TimestampRfc3161 -match '^https?://[a-zA-Z0-9.-]+')) {
+        Write-Log -Level 'ERROR' -Message "Security Validation: Timestamp URL '$TimestampRfc3161' is invalid. Must be an HTTP/HTTPS URL."
+        Set-GitHubActionOutput -Name 'signed-files-count' -Value '0'
+        Set-GitHubActionOutput -Name 'signing-status' -Value 'error'
+        exit 2
+    }
+
     # Resolve target files
     $targetFiles = Resolve-TargetFiles -Patterns $Files
     Write-Log -Level 'INFO' -Message "Discovered $(@($targetFiles).Count) candidate file(s) matching input pattern."
+
+    # Cross-platform environment detection
+    $isUnix = $false
+    try {
+        if (-not [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)) {
+            $isUnix = $true
+        }
+    }
+    catch {
+        if ([System.Environment]::OSVersion.Platform -ne [System.PlatformID]::Win32NT) {
+            $isUnix = $true
+        }
+    }
+
+    if ($isUnix -and -not $DryRun) {
+        $peTargets = @($targetFiles | Where-Object { $_ -notmatch '\.ps[m1d]1$' })
+        if ($peTargets.Count -gt 0) {
+            Write-Log -Level 'ERROR' -Message "Cross-platform constraint: Azure Trusted Signing via SignTool and Azure.CodeSigning.Dlib.dll requires a Windows runner (runs-on: windows-latest). Operating System is '$([System.Runtime.InteropServices.RuntimeInformation]::OSDescription)'. Cannot sign PE/MSI binaries on Linux/macOS."
+            Set-GitHubActionOutput -Name 'signed-files-count' -Value '0'
+            Set-GitHubActionOutput -Name 'signing-status' -Value 'error'
+            exit 2
+        }
+    }
 
     $warningCount = 0
     $errorCount = 0
@@ -394,9 +453,9 @@ function Main {
                     '/td', $TimestampDigest,
                     '/dlib', $dlib,
                     '/dmc', $tempMetadataFile,
-                    "`"$file`""
+                    $file
                 )
-                $proc = Start-Process -FilePath $signtool -ArgumentList ($signtoolArgs -join ' ') -Wait -NoNewWindow -PassThru
+                $proc = Start-Process -FilePath $signtool -ArgumentList $signtoolArgs -Wait -NoNewWindow -PassThru
                 if ($proc.ExitCode -eq 0) {
                     $signSuccess = $true
                 }
