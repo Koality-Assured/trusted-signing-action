@@ -1,0 +1,58 @@
+name: Sign PowerShell Scripts with Azure Trusted Signing
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/**.ps1'
+      - 'modules/**.psm1'
+  workflow_dispatch:
+
+permissions:
+  id-token: write # Required for passwordless Azure OIDC federated authentication
+  contents: read
+  actions: read
+
+jobs:
+  sign-powershell:
+    name: Sign & Verify PowerShell Artifacts
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
+      - name: Azure Trusted Signing (PowerShell Scripts)
+        id: trusted-signing
+        uses: koality-assured/trusted-signing-action@v1
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          endpoint: https://eus.codesigning.azure.net/
+          trusted-signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          files: |
+            scripts/**/*.ps1
+            modules/**/*.psm1
+            modules/**/*.psd1
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          file-digest: SHA256
+          verify: true
+          fail-on-warning: true
+
+      - name: Display Signing Metrics
+        run: |
+          Write-Host "Total Artifacts Signed   : ${{ steps.trusted-signing.outputs.signed-files-count }}"
+          Write-Host "Total Artifacts Verified : ${{ steps.trusted-signing.outputs.verified-files-count }}"
+          Write-Host "Overall Execution Status : ${{ steps.trusted-signing.outputs.signing-status }}"
+
+      - name: Archive Signed PowerShell Scripts
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-powershell-scripts
+          path: |
+            scripts/**/*.ps1
+            modules/**/*.psm1
+            modules/**/*.psd1
+          retention-days: 14

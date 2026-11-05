@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test-python:
+    name: Pytest & Security Audit (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Test Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pyyaml
+
+      - name: Run Pytest Suite
+        run: |
+          python -m pytest -v
+
+      - name: Run Antagonistic Security & Sanitization Review
+        run: |
+          python adversarial_review.py
+
+  test-action-dryrun:
+    name: Composite Action Dry-Run Test (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate Mock Artifacts for Dry-Run
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "$PWD/test-dist" -Force
+          Set-Content -Path "$PWD/test-dist/sample-app.ps1" -Value 'Write-Host "Test Application"'
+          Set-Content -Path "$PWD/test-dist/sample-module.psm1" -Value 'function Test-Fn { "Hello" }'
+
+      - name: Invoke Composite Action in Dry-Run Mode
+        uses: ./
+        with:
+          trusted-signing-account-name: "mock-account"
+          certificate-profile-name: "mock-profile"
+          files: "test-dist/*.ps1, test-dist/*.psm1"
+          dry-run: true
+          verify: true
+          fail-on-warning: true

@@ -1,0 +1,117 @@
+name: "Azure Trusted Signing"
+description: "Enterprise-grade, zero-credential GitHub Composite Action for Microsoft Azure Trusted Signing (ACS)."
+author: "Koality Assured"
+
+inputs:
+  azure-tenant-id:
+    description: "Azure Tenant ID for passwordless Azure OIDC federated authentication."
+    required: false
+    default: ""
+  azure-client-id:
+    description: "Azure Client ID (Application ID) for passwordless Azure OIDC federated authentication."
+    required: false
+    default: ""
+  endpoint:
+    description: "Azure Trusted Signing regional endpoint URL."
+    required: false
+    default: "https://eus.codesigning.azure.net/"
+  trusted-signing-account-name:
+    description: "Azure Trusted Signing account resource name."
+    required: true
+  certificate-profile-name:
+    description: "Azure Trusted Signing certificate profile name."
+    required: true
+  files:
+    description: "Glob pattern or multiline list of files to sign (e.g. .ps1, .exe, .dll, .msi, .cat, .cab, .appx)."
+    required: true
+  timestamp-rfc3161:
+    description: "RFC 3161 compliant timestamp authority URL."
+    required: false
+    default: "http://timestamp.acs.microsoft.com"
+  timestamp-digest:
+    description: "Digest algorithm for timestamp counter-signature (e.g. SHA256)."
+    required: false
+    default: "SHA256"
+  file-digest:
+    description: "File hashing digest algorithm (e.g. SHA256)."
+    required: false
+    default: "SHA256"
+  verify:
+    description: "Whether to automatically verify Authenticode signatures post-signing."
+    required: false
+    default: "true"
+  fail-on-warning:
+    description: "Fail the workflow step if warnings occur during signing or verification."
+    required: false
+    default: "false"
+  dry-run:
+    description: "Simulate signing workflow in validation mode without invoking live Azure services."
+    required: false
+    default: "false"
+
+outputs:
+  signed-files-count:
+    description: "Total number of files successfully signed."
+    value: ${{ steps.sign-artifacts.outputs.signed-files-count }}
+  verified-files-count:
+    description: "Total number of files verified post-signing."
+    value: ${{ steps.verify-artifacts.outputs.verified-files-count }}
+  signing-status:
+    description: "Overall outcome status: success, warning, or error."
+    value: ${{ steps.sign-artifacts.outputs.signing-status }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Azure OIDC Authentication
+      if: ${{ inputs.azure-tenant-id != '' && inputs.azure-client-id != '' }}
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure-client-id }}
+        tenant-id: ${{ inputs.azure-tenant-id }}
+        allow-no-subscriptions: true
+
+    - name: Execute Azure Trusted Signing Driver
+      id: sign-artifacts
+      shell: pwsh
+      env:
+        INPUT_ENDPOINT: ${{ inputs.endpoint }}
+        INPUT_ACCOUNT_NAME: ${{ inputs.trusted-signing-account-name }}
+        INPUT_PROFILE_NAME: ${{ inputs.certificate-profile-name }}
+        INPUT_FILES: ${{ inputs.files }}
+        INPUT_TIMESTAMP_RFC3161: ${{ inputs.timestamp-rfc3161 }}
+        INPUT_TIMESTAMP_DIGEST: ${{ inputs.timestamp-digest }}
+        INPUT_FILE_DIGEST: ${{ inputs.file-digest }}
+        INPUT_FAIL_ON_WARNING: ${{ inputs.fail-on-warning }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        $failOnWarn = if ($env:INPUT_FAIL_ON_WARNING -eq 'true') { $true } else { $false }
+        $dryRun = if ($env:INPUT_DRY_RUN -eq 'true') { $true } else { $false }
+        & "${{ github.action_path }}/scripts/Sign-Artifacts.ps1" `
+          -Endpoint "$env:INPUT_ENDPOINT" `
+          -CodeSigningAccountName "$env:INPUT_ACCOUNT_NAME" `
+          -CertificateProfileName "$env:INPUT_PROFILE_NAME" `
+          -Files "$env:INPUT_FILES" `
+          -TimestampRfc3161 "$env:INPUT_TIMESTAMP_RFC3161" `
+          -TimestampDigest "$env:INPUT_TIMESTAMP_DIGEST" `
+          -FileDigest "$env:INPUT_FILE_DIGEST" `
+          -FailOnWarning:$failOnWarn `
+          -DryRun:$dryRun
+
+    - name: Verify Authenticode Signatures
+      id: verify-artifacts
+      if: ${{ inputs.verify == 'true' }}
+      shell: pwsh
+      env:
+        INPUT_FILES: ${{ inputs.files }}
+        INPUT_TIMESTAMP_DIGEST: ${{ inputs.timestamp-digest }}
+        INPUT_FAIL_ON_WARNING: ${{ inputs.fail-on-warning }}
+        INPUT_DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        $failOnWarn = if ($env:INPUT_FAIL_ON_WARNING -eq 'true') { $true } else { $false }
+        $dryRun = if ($env:INPUT_DRY_RUN -eq 'true') { $true } else { $false }
+        & "${{ github.action_path }}/scripts/Test-AuthenticodeSignature.ps1" `
+          -Files "$env:INPUT_FILES" `
+          -ExpectedDigest "$env:INPUT_TIMESTAMP_DIGEST" `
+          -FailOnWarning:$failOnWarn `
+          -DryRun:$dryRun

@@ -1,0 +1,56 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & Linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# PowerShell temporary artifacts
+*.tmp.ps1
+*__test_*.ps1
+*.ps1xml.bak
+TestResults/
+
+# Certificates and Keys (Security Invariant)
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
+*.pem
+*.snk
+
+# Windows / Visual Studio build outputs
+bin/
+obj/
+*.suo
+*.user
+*.log
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

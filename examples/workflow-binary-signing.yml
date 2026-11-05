@@ -1,0 +1,66 @@
+name: Sign Compiled Binaries with Azure Trusted Signing
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: 'Git release tag to build and sign'
+        required: false
+        default: 'v1.0.0'
+
+permissions:
+  id-token: write # Required for passwordless Azure OIDC federated authentication
+  contents: write
+
+jobs:
+  build-and-sign:
+    name: Build, Sign, and Release Binaries
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Source Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build and Publish Production Binaries
+        run: |
+          dotnet publish src/KoalityApp.sln -c Release -r win-x64 --self-contained -o ./dist/bin
+
+      - name: Sign Binaries via Azure Trusted Signing
+        id: sign-binaries
+        uses: koality-assured/trusted-signing-action@v1
+        with:
+          azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          endpoint: https://eus.codesigning.azure.net/
+          trusted-signing-account-name: ${{ secrets.AZURE_TRUSTED_SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.AZURE_CERTIFICATE_PROFILE }}
+          files: |
+            dist/bin/**/*.exe
+            dist/bin/**/*.dll
+            dist/bin/**/*.msi
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+          file-digest: SHA256
+          verify: true
+          fail-on-warning: true
+
+      - name: Verify Signature Metrics
+        run: |
+          Write-Host "Signed Count   : ${{ steps.sign-binaries.outputs.signed-files-count }}"
+          Write-Host "Verified Count : ${{ steps.sign-binaries.outputs.verified-files-count }}"
+          Write-Host "Status         : ${{ steps.sign-binaries.outputs.signing-status }}"
+
+      - name: Upload Signed Binaries to Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            dist/bin/**/*.exe
+            dist/bin/**/*.dll
+            dist/bin/**/*.msi
