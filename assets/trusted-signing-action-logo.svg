@@ -5,6 +5,11 @@
       <stop offset="50%" stop-color="#0F172A" />
       <stop offset="100%" stop-color="#080C14" />
     </linearGradient>
+    <linearGradient id="primary-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="50%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
     <linearGradient id="accent-cyan" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#0284C7" />
       <stop offset="100%" stop-color="#10B981" />
@@ -15,8 +20,10 @@
     </filter>
   </defs>
 
+  <!-- Background Shield Canvas -->
   <rect width="512" height="512" rx="112" fill="url(#bg-grad)" stroke="#1E293B" stroke-width="4" />
 
+  <!-- Background Geometric Orbit Tracks -->
   <g opacity="0.2" stroke="#475569" stroke-width="1.5">
     <circle cx="256" cy="256" r="210" fill="none" stroke-dasharray="6 8" />
     <circle cx="256" cy="256" r="160" fill="none" />
@@ -25,22 +32,36 @@
     <line x1="46" y1="256" x2="466" y2="256" />
   </g>
 
+  <!-- Outer Orbit Nodes -->
   <circle cx="256" cy="256" r="185" fill="none" stroke="url(#accent-cyan)" stroke-width="3" opacity="0.5" stroke-dasharray="40 20 80 20" />
   <g fill="#0B0F19" stroke-width="3">
     <circle cx="256" cy="71" r="14" stroke="#0284C7" />
     <circle cx="256" cy="71" r="5" fill="#0284C7" />
     <circle cx="441" cy="256" r="14" stroke="#10B981" />
     <circle cx="441" cy="256" r="5" fill="#10B981" />
-    <circle cx="256" cy="441" r="14" stroke="#F59E0B" />
-    <circle cx="256" cy="441" r="5" fill="#F59E0B" />
+    <circle cx="256" cy="441" r="14" stroke="#38BDF8" />
+    <circle cx="256" cy="441" r="5" fill="#38BDF8" />
     <circle cx="71" cy="256" r="14" stroke="#0284C7" />
     <circle cx="71" cy="256" r="5" fill="#0284C7" />
   </g>
 
-  <g transform="translate(156, 156)" filter="url(#glow)">
-    
-        <path d="M 100 15 L 180 45 C 180 130 140 175 100 195 C 60 175 20 130 20 45 Z" fill="#1E293B" stroke="#0284C7" stroke-width="5" />
-        <path d="M 60 100 L 88 128 L 140 68" fill="none" stroke="#10B981" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)" />
+  <!-- Central Emblem Geometry -->
+  <g filter="url(#glow)">
+
+    <!-- Armor Shield & Lock Motif -->
+    <path d="M 256 140 L 356 185 V 265 C 356 325 256 370 256 370 C 256 370 156 325 156 265 V 185 Z" 
+          fill="none" stroke="#0284C7" stroke-width="6" />
+    <!-- Inner Padlock -->
+    <path d="M 236 230 V 210 C 236 195 276 195 276 210 V 230" fill="none" stroke="#10B981" stroke-width="5" />
+    <rect x="220" y="230" width="72" height="54" rx="8" fill="#38BDF8" />
+    <circle cx="256" cy="252" r="6" fill="#0B0F19" />
+    <line x1="256" y1="256" x2="256" y2="268" stroke="#0B0F19" stroke-width="3" />
         
   </g>
+
+  <!-- Bus Trajectory Pulses -->
+  <circle cx="176" cy="134" r="4" fill="#0284C7" filter="url(#glow)" />
+  <circle cx="336" cy="134" r="4" fill="#10B981" filter="url(#glow)" />
+  <circle cx="336" cy="378" r="4" fill="#38BDF8" filter="url(#glow)" />
+  <circle cx="176" cy="378" r="4" fill="#0284C7" filter="url(#glow)" />
 </svg>

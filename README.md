@@ -1,18 +1,19 @@
 <div align="center">
 
-![TRUSTED SIGNING ACTION Banner](assets/trusted-signing-action-banner.svg)
+![Trusted Signing Action Banner](assets/trusted-signing-action-banner.svg)
 
 # Trusted Signing Action
 
 <p align="center">
-  <img src="assets/trusted-signing-action-logo.svg" alt="TRUSTED SIGNING ACTION Logo" width="128" height="128" />
+  <img src="assets/trusted-signing-action-logo.svg" alt="Trusted Signing Action Logo" width="128" height="128" />
 </p>
 
 **Reusable GitHub Composite Action for Microsoft Azure Trusted Signing with Passwordless OIDC**
 
 [![CI](https://github.com/Koality-Assured/trusted-signing-action/actions/workflows/ci.yml/badge.svg)](https://github.com/Koality-Assured/trusted-signing-action/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-[![Domain: trusted--signing--action](https://img.shields.io/badge/domain-trusted--signing--action-blueviolet.svg)](#)
+[![GitHub Action: Composite](https://img.shields.io/badge/GitHub_Action-Composite-2088FF.svg)](action.yml)
+[![Domain: Trusted-Signing-Action](https://img.shields.io/badge/domain-trusted-signing-action-blueviolet.svg)]()
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 
 </div>

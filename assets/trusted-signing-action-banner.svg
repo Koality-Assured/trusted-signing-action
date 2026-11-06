@@ -9,14 +9,21 @@
       <stop offset="0%" stop-color="#0284C7" />
       <stop offset="100%" stop-color="#10B981" />
     </linearGradient>
+    <linearGradient id="core-glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="50%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
     <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="6" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
+  <!-- Background Backdrop -->
   <rect width="1280" height="400" fill="url(#bg)" />
 
+  <!-- Tech Matrix Blueprint Grid -->
   <g opacity="0.12" stroke="#0284C7" stroke-width="1">
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" />
@@ -24,57 +31,78 @@
     <rect width="1280" height="400" fill="url(#grid)" />
   </g>
 
+  <!-- High-Tech Data Stream Vectors -->
   <g opacity="0.25">
-    <path d="M -50 120 Q 350 40 640 180 T 1330 200" fill="none" stroke="#0284C7" stroke-width="2" />
-    <path d="M -50 260 Q 420 320 780 220 T 1330 150" fill="none" stroke="#10B981" stroke-width="2" />
+    <path d="M -50 100 Q 300 60 640 180 T 1330 220" fill="none" stroke="#0284C7" stroke-width="2" />
+    <path d="M -50 280 Q 400 340 780 240 T 1330 140" fill="none" stroke="#10B981" stroke-width="2" />
   </g>
 
+  <!-- Left: Hero Graphic Emblematics -->
   <g transform="translate(180, 200)">
+    <!-- Concentric Orbit Rings -->
     <circle cx="0" cy="0" r="140" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="6 8" opacity="0.4" />
     <circle cx="0" cy="0" r="110" fill="none" stroke="#0284C7" stroke-width="2" stroke-dasharray="30 15 60 15" opacity="0.7" />
     <circle cx="0" cy="0" r="80" fill="none" stroke="#10B981" stroke-width="2" opacity="0.6" />
+    
+    <!-- Outer Spoke Nodes -->
     <circle cx="0" cy="-140" r="10" fill="#0B0F19" stroke="#0284C7" stroke-width="3" />
     <circle cx="140" cy="0" r="10" fill="#0B0F19" stroke="#10B981" stroke-width="3" />
-    <circle cx="0" cy="140" r="10" fill="#0B0F19" stroke="#F59E0B" stroke-width="3" />
+    <circle cx="0" cy="140" r="10" fill="#0B0F19" stroke="#38BDF8" stroke-width="3" />
     <circle cx="-140" cy="0" r="10" fill="#0B0F19" stroke="#0284C7" stroke-width="3" />
-    <g transform="translate(-40, -45)" filter="url(#glow)">
-      
-        <!-- Security Shield & Keyhole / Check Motif -->
-        <path d="M 40 5 L 75 18 C 75 55 58 75 40 85 C 22 75 5 55 5 18 Z" fill="#1E293B" stroke="#0284C7" stroke-width="2" />
-        <path d="M 23 42 L 35 54 L 57 28" fill="none" stroke="#10B981" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Central Iconography Transformed -->
+    <g transform="translate(-256, -256)">
+
+    <!-- Armor Shield & Lock Motif -->
+    <path d="M 256 140 L 356 185 V 265 C 356 325 256 370 256 370 C 256 370 156 325 156 265 V 185 Z" 
+          fill="none" stroke="#0284C7" stroke-width="6" />
+    <!-- Inner Padlock -->
+    <path d="M 236 230 V 210 C 236 195 276 195 276 210 V 230" fill="none" stroke="#10B981" stroke-width="5" />
+    <rect x="220" y="230" width="72" height="54" rx="8" fill="#38BDF8" />
+    <circle cx="256" cy="252" r="6" fill="#0B0F19" />
+    <line x1="256" y1="256" x2="256" y2="268" stroke="#0B0F19" stroke-width="3" />
         
     </g>
   </g>
 
+  <!-- Right: Typography & Capability Badges -->
   <g transform="translate(420, 100)">
-    <rect x="0" y="0" width="350" height="26" rx="13" fill="#1E293B" stroke="#334155" stroke-width="1" />
+    <!-- Overline Category Capsule -->
+    <rect x="0" y="0" width="394" height="26" rx="13" fill="#1E293B" stroke="#334155" stroke-width="1" />
     <circle cx="14" cy="13" r="5" fill="#0284C7" filter="url(#glow)" />
     <text x="28" y="17" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="700" letter-spacing="1.5">KOALITY-ASSURED • ZERO-CREDENTIAL CODE SIGNING</text>
 
-    <text x="0" y="72" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="46" font-weight="900" letter-spacing="1">TRUSTED SIGNING ACTION</text>
+    <!-- Project Title -->
+    <text x="0" y="72" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="48" font-weight="900" letter-spacing="1">TRUSTED SIGNING ACTION</text>
 
-    <text x="0" y="110" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="400">Reusable GitHub Composite Action for Microsoft Azure Trusted Signing with Passwordless OIDC</text>
+    <!-- Subtitle -->
+    <text x="0" y="110" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="17" font-weight="400">Reusable GitHub Composite Action for Microsoft Azure Trusted Signing with Passwordless OIDC</text>
 
+    <!-- Capability Chips -->
     <g transform="translate(0, 150)">
+      <!-- Chip 1: Passwordless OIDC -->
       <g transform="translate(0, 0)">
-        <rect x="0" y="0" width="184" height="38" rx="8" fill="#111827" stroke="#0284C7" stroke-width="1.5" />
+        <rect x="0" y="0" width="201" height="38" rx="8" fill="#111827" stroke="#0284C7" stroke-width="1.5" />
         <circle cx="18" cy="19" r="4" fill="#0284C7" />
         <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Passwordless OIDC</text>
       </g>
-      <g transform="translate(196, 0)">
-        <rect x="0" y="0" width="216" height="38" rx="8" fill="#111827" stroke="#10B981" stroke-width="1.5" />
+      <!-- Chip 2: Azure Trusted Sign -->
+      <g transform="translate(215, 0)">
+        <rect x="0" y="0" width="210" height="38" rx="8" fill="#111827" stroke="#10B981" stroke-width="1.5" />
         <circle cx="18" cy="19" r="4" fill="#10B981" />
-        <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Azure Trusted Signing</text>
+        <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Azure Trusted Sign</text>
       </g>
-      <g transform="translate(424, 0)">
-        <rect x="0" y="0" width="232" height="38" rx="8" fill="#111827" stroke="#F59E0B" stroke-width="1.5" />
-        <circle cx="18" cy="19" r="4" fill="#F59E0B" />
-        <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Authenticode & RFC 3161</text>
-      </g>
-      <g transform="translate(668, 0)">
-        <rect x="0" y="0" width="216" height="38" rx="8" fill="#111827" stroke="#38BDF8" stroke-width="1.5" />
+      <!-- Chip 3: Authenticode CI -->
+      <g transform="translate(439, 0)">
+        <rect x="0" y="0" width="183" height="38" rx="8" fill="#111827" stroke="#38BDF8" stroke-width="1.5" />
         <circle cx="18" cy="19" r="4" fill="#38BDF8" />
-        <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Multi-Format Binaries</text>
+        <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Authenticode CI</text>
+      </g>
+      <!-- Chip 4: Zero Credentials -->
+      <g transform="translate(636, 0)">
+        <rect x="0" y="0" width="192" height="38" rx="8" fill="#111827" stroke="#38BDF8" stroke-width="1.5" />
+        <circle cx="18" cy="19" r="4" fill="#38BDF8" />
+        <text x="32" y="24" fill="#E2E8F0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" font-weight="600">Zero Credentials</text>
       </g>
     </g>
   </g>
