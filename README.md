@@ -1,12 +1,21 @@
-# Azure Trusted Signing Action
+<div align="center">
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen.svg)](.github/workflows/ci.yml)
-[![Security Policy](https://img.shields.io/badge/Security-Koality_Assured_AppSec-purple.svg)](SECURITY.md)
-[![Zero Credential](https://img.shields.io/badge/Auth-Azure_OIDC_Federated-green.svg)](#azure-setup-guide-oidc--rbac)
-[![Supported Formats](https://img.shields.io/badge/Artifacts-.ps1%20%7C%20.exe%20%7C%20.dll%20%7C%20.msi%20%7C%20.cat%20%7C%20.appx-orange.svg)](#supported-file-types)
+![TRUSTED SIGNING ACTION Banner](assets/trusted-signing-action-banner.svg)
 
-Enterprise-grade, zero-credential GitHub Composite Action for **Microsoft Azure Trusted Signing** (formerly Azure Code Signing / ACS). Enables automated, tamper-proof Authenticode signing and cryptographic verification across PowerShell scripts, compiled binaries, installers, and packages without storing long-lived credentials, PFX certificates, or private keys in CI/CD secrets.
+# Trusted Signing Action
+
+<p align="center">
+  <img src="assets/trusted-signing-action-logo.svg" alt="TRUSTED SIGNING ACTION Logo" width="128" height="128" />
+</p>
+
+**Reusable GitHub Composite Action for Microsoft Azure Trusted Signing with Passwordless OIDC**
+
+[![CI](https://github.com/Koality-Assured/trusted-signing-action/actions/workflows/ci.yml/badge.svg)](https://github.com/Koality-Assured/trusted-signing-action/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Domain: trusted--signing--action](https://img.shields.io/badge/domain-trusted--signing--action-blueviolet.svg)](#)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
+
+</div>
 
 ---
 
